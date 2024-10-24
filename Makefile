@@ -1,12 +1,5 @@
-CFLAGS=-Wall -pedantic
-
-.PHONY: all
-all: test
-
-test: my-malloc.o
-	gcc -o $@ $^
-%.o: %.c
-	gcc $(CFLAGS) -c -o $@ $^
+my-malloc: my-malloc.c
+	gcc -g -Wall -pedantic -rdynamic -shared -fPIC -o my-malloc.so my-malloc.c
 .PHONY: clean
 clean:
 	rm -f my-malloc
