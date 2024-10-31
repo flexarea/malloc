@@ -1,4 +1,5 @@
-#include "stdio.h"
+#include <unistd.h>
+#include <string.h>
 
 static void *bottom;
 static int extra = 10000;
@@ -18,18 +19,19 @@ void *malloc(size_t size) {
         new.next_record = bottom;
         new.section_size = round_size;
         new.free = 0;
-        memcpy(bottom,new,sizeof(record));
+        memcpy(bottom,&new,sizeof(record));
     }
+    return NULL;
 }
 
 void *calloc(size_t nmemb, size_t size) {
-
+    return NULL;
 }
 
-void *realloc(void *_Nullable ptr, size_t size) {
-
+void *realloc(void *ptr, size_t size) {
+    return NULL;
 }
 
 void *free(void *ptr) {
-
+    return NULL;
 }
