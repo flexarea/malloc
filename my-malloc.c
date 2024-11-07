@@ -23,7 +23,7 @@ void *malloc(size_t req_size) {
     }
     heap_record *current_record = bottom;
     while (current_record->next_record != current_record) {
-        if (current_record->free != 1){
+        if (current_record->free != 0){
             // Check to see if the freed chunck is the right size
             if (current_record->section_size <= req_size) {
                 current_record->free = 0;
@@ -51,6 +51,6 @@ void *realloc(void *ptr, size_t size) {
 }
 
 void free(void *ptr) {
-    heap_record *record_to_free = ptr;
+    heap_record *record_to_free = (void *)((char *) ptr - sizeof(heap_record));
     record_to_free->free = 1;
 }
