@@ -6,8 +6,8 @@ int main(int argc, char *argv[]){
     void * p2 = malloc(10);
     free(p1);
     free(p2);
-    void * p3 = malloc(5);
-    void * p4 = malloc(5);
+    void * p3 = malloc(8);
+    void * p4 = malloc(8);
 
     return 1;
 }

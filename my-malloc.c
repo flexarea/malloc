@@ -23,15 +23,26 @@ void *malloc(size_t req_size) {
     }
     heap_record *current_record = bottom;
     while (current_record->next_record != current_record) {
-        if (current_record->free != 0){
+        if (current_record->free == 1){
             // Check to see if the freed chunck is the right size
-            if (current_record->section_size <= req_size) {
+            
+            if (req_size <= current_record->section_size) {
                 current_record->free = 0;
                 //cast to char pointer for intuitive arithmatic
                 return (char *) current_record + sizeof(heap_record);
             }
         }
         current_record = current_record->next_record;
+    }
+
+    if (current_record->free == 1){
+        // Check to see if the freed chunck is the right size
+        
+        if (req_size <= current_record->section_size) {
+            current_record->free = 0;
+            //cast to char pointer for intuitive arithmatic
+            return (char *) current_record + sizeof(heap_record);
+        }
     }
     // At this point, we have checked all existing records and have not found a free one that's big enough.
     current_record->next_record = (char *) current_record + sizeof(heap_record) + current_record->section_size;
