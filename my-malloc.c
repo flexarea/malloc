@@ -111,7 +111,7 @@ void *realloc(void *ptr, size_t size) {
     }
     // reallocate requested chunk
     record_to_reallocate->free = 0;
-    record_to_reallocate->section_size = 0;
+    record_to_reallocate->section_size = size + (size % 16);
     return (char *) record_to_reallocate + sizeof(heap_record);
 
 }
