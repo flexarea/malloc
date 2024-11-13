@@ -106,7 +106,7 @@ void *realloc(void *ptr, size_t size) {
     // check if size is greater than previous allocation chunk
     heap_record *record_to_reallocate = (void *)((char *) ptr - sizeof(heap_record));
 
-    if(record_to_reallocate->section_size < size) {
+    if(record_to_reallocate->section_size < (size + (size % 16))) {
         return NULL;
     }
     // reallocate requested chunk
