@@ -2,19 +2,27 @@
 #include <string.h>
 
 static void *bottom;
-static int extra = 2;
-
+static int extra_bytes = 10000;
+static void *top_of_heap;
 
 typedef struct my_struct {
     void *next_record;
-    int section_size;
+    unsigned int section_size;
     int free;
 } heap_record;
 
+size_t calculate_nearest_size(size_t size){
+    if (size % 16 == 0) {
+        return size;
+    }
+    return size + (16 - (size % 16));
+}
+
 void *malloc(size_t req_size) {
-    int round_size = req_size + (req_size % 16);
+    size_t round_size = calculate_nearest_size(req_size);
     if(bottom == NULL){
-        bottom = sbrk(round_size + sizeof(heap_record) + extra);
+        bottom = sbrk(round_size + sizeof(heap_record) + extra_bytes);
+        top_of_heap = ((char *) bottom) + (round_size + sizeof(heap_record) + extra_bytes);
         heap_record *head = bottom;
         head->next_record = bottom;
         head->section_size = round_size;
@@ -45,6 +53,13 @@ void *malloc(size_t req_size) {
         }
     }
     // At this point, we have checked all existing records and have not found a free one that's big enough.
+    if ((void *) ((char *)current_record + round_size) >= (void *) top_of_heap){
+        // We have reached the end of the heap, so we must extend it.
+        if (brk((char *) top_of_heap + extra_bytes) == -1){
+            // Hqandle the error, but i dont really know what we'd do here. 
+        }
+    }
+
     current_record->next_record = (char *) current_record + sizeof(heap_record) + current_record->section_size;
     heap_record *new_record = current_record->next_record;
     new_record->next_record = new_record;
@@ -57,7 +72,7 @@ void *calloc(size_t nmemb, size_t size) {
 
     int round_size = (nmemb*size) + ((nmemb*size) % 16);
     if(bottom == NULL){
-        bottom = sbrk(round_size + sizeof(heap_record) + extra);
+        bottom = sbrk(round_size + sizeof(heap_record) + extra_bytes);
         heap_record *head = bottom;
         head->next_record = bottom;
         head->section_size = round_size;
@@ -114,6 +129,15 @@ void *realloc(void *ptr, size_t size) {
     return (char *) record_to_reallocate + sizeof(heap_record);
 
 }
+
+size_t malloc_usable_size(void *ptr){
+    if (ptr == NULL) {
+        return 0;
+    }
+    heap_record *hr = (void*) ((char *) ptr - sizeof(heap_record));
+    return hr->section_size;
+}
+
 
 void free(void *ptr) {
     if(ptr != NULL){
