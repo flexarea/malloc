@@ -2,7 +2,7 @@
 #include <string.h>
 
 static void *bottom;
-static int extra = 2;
+static int extra = 1000;
 
 
 typedef struct my_struct {
@@ -120,4 +120,14 @@ void free(void *ptr) {
         heap_record *record_to_free = (void *)((char *) ptr - sizeof(heap_record));
         record_to_free->free = 1;
     }
+}
+
+int malloc_usable_size(void *ptr) {
+    if (ptr != NULL) {
+        heap_record *record = (void *)((char *) ptr - sizeof(heap_record));
+        return record->section_size + extra;
+    }
+
+    return 0;
+
 }
