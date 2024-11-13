@@ -2,7 +2,7 @@
 #include <stdlib.h>
 
 void realloc_test();
-
+size_t malloc_usable_size(void *ptr);
 int main(int argc, char *argv[]){
             
     char str[] = "Esdras";
@@ -11,6 +11,7 @@ int main(int argc, char *argv[]){
     free(p1);
     free(p2);
     void * p3 = malloc(40);
+    size_t t = malloc_usable_size(p3);
     char * p4 = (char *) malloc(8);
 
     for (int i=0; i<6; i++) {
