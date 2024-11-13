@@ -121,7 +121,11 @@ void *calloc(size_t nmemb, size_t size) {
 
 void *realloc(void *ptr, size_t size) {
     if (ptr == NULL){
-        return NULL;
+        void * val = malloc(size);
+        return val;
+    }
+    if (size == 0) {
+        free(ptr);
     }
     // check if size is greater than previous allocation chunk
     heap_record *record_to_reallocate = (void *)((char *) ptr - sizeof(heap_record));
@@ -129,7 +133,7 @@ void *realloc(void *ptr, size_t size) {
     if(record_to_reallocate->section_size < size) {
         /* This feels wrong. Realloc only returns null if there is
          * not space in the heap to allocate a new chunk. If the current
-         * chunk cannot be extended, we should look for other chunks to add it to.
+         * chunk cannot be extended, we should look for other chunks to add it
         */
         return NULL;
     }
