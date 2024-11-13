@@ -122,12 +122,3 @@ void free(void *ptr) {
     }
 }
 
-int malloc_usable_size(void *ptr) {
-    if (ptr != NULL) {
-        heap_record *record = (void *)((char *) ptr - sizeof(heap_record));
-        return record->section_size + extra;
-    }
-
-    return 0;
-
-}
