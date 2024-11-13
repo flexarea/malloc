@@ -1,6 +1,8 @@
 #include <unistd.h>
 #include <string.h>
 
+//b my-malloc.c:72
+
 static void *bottom;
 static int extra_bytes = 10000;
 static void *top_of_heap;
@@ -118,10 +120,17 @@ void *calloc(size_t nmemb, size_t size) {
 }
 
 void *realloc(void *ptr, size_t size) {
+    if (ptr == NULL){
+        return NULL;
+    }
     // check if size is greater than previous allocation chunk
     heap_record *record_to_reallocate = (void *)((char *) ptr - sizeof(heap_record));
 
     if(record_to_reallocate->section_size < size) {
+        /* This feels wrong. Realloc only returns null if there is
+         * not space in the heap to allocate a new chunk. If the current
+         * chunk cannot be extended, we should look for other chunks to add it to.
+        */
         return NULL;
     }
     // reallocate requested chunk
