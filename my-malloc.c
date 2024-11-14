@@ -35,7 +35,15 @@ void *malloc(size_t req_size) {
     while (current_record->next_record != current_record) {
         if (current_record->free == 1){
             // Check to see if the freed chunck is the right size
-            if (req_size <= current_record->section_size) {
+            if (round_size <= current_record->section_size) {
+                if ((char *)current_record->next_record - ((char *)current_record + round_size) >= 32){
+                    //readjust or create/insert new block
+                    heap_record *new_record = (void *)((char *) current_record + sizeof(heap_record) + round_size);
+                    new_record->next_record = current_record->next_record;
+                    new_record->section_size = (char *)new_record->next_record - (char *)new_record + sizeof(heap_record); 
+                    current_record->next_record = new_record;
+                    current_record->section_size = round_size;
+                }
                 current_record->free = 0;
                 //cast to char pointer for intuitive arithmatic
                 return (char *) current_record + sizeof(heap_record);
@@ -46,7 +54,8 @@ void *malloc(size_t req_size) {
 
     if (current_record->free == 1){
         // Check to see if the freed chunck is the right size
-        if (req_size <= current_record->section_size) {
+        if (round_size <= current_record->section_size) {
+            current_record->section_size = round_size;
             current_record->free = 0;
             //cast to char pointer for intuitive arithmatic
             return (char *) current_record + sizeof(heap_record);
