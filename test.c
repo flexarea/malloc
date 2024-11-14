@@ -12,12 +12,12 @@ int main(int argc, char *argv[]){
     free(p2);
     void * p3 = malloc(40);
     size_t t = malloc_usable_size(p3);
-    char * p4 = (char *) malloc(8);
+    char * p4 = (char *) malloc(81);
 
     for (int i=0; i<6; i++) {
         *(p4+i) = str[i];    
     }
-    char *p5 = realloc(p4, 10);
+    char *p5 = realloc(p4, 16);
     free(p5);
 
     char * p6 = (char *) calloc(8, sizeof(char));
