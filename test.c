@@ -7,11 +7,8 @@ int main(int argc, char *argv[]){
             
     char str[] = "Esdras";
     void * p1 = malloc(10);
-    void * p2 = malloc(10);
-    free(p1);
-    free(p2);
+    void * p2 = malloc(20);
     void * p3 = malloc(40);
-    size_t t = malloc_usable_size(p3);
     char * p4 = (char *) malloc(81);
 
     for (int i=0; i<6; i++) {

@@ -1,13 +1,12 @@
 #include <unistd.h>
 #include <string.h>
+#include <stdlib.h>
 
 //b my-malloc.c:72
 
 static void *bottom;
 static int extra_bytes = 10000;
 static void *top_of_heap;
-
-void free(void *ptr);
 
 typedef struct my_struct {
     void *next_record;
@@ -25,7 +24,7 @@ void *malloc(size_t req_size) {
     size_t round_size = calculate_nearest_size(req_size);
     if(bottom == NULL){
         bottom = sbrk(round_size + sizeof(heap_record) + extra_bytes);
-        top_of_heap = ((char *) bottom) + (round_size + sizeof(heap_record) + extra_bytes);
+        top_of_heap = sbrk(0);
         heap_record *head = bottom;
         head->next_record = bottom;
         head->section_size = round_size;
@@ -36,7 +35,6 @@ void *malloc(size_t req_size) {
     while (current_record->next_record != current_record) {
         if (current_record->free == 1){
             // Check to see if the freed chunck is the right size
-
             if (req_size <= current_record->section_size) {
                 current_record->free = 0;
                 //cast to char pointer for intuitive arithmatic
@@ -55,10 +53,10 @@ void *malloc(size_t req_size) {
         }
     }
     // At this point, we have checked all existing records and have not found a free one that's big enough.
-    if ((void *) ((char *)current_record + round_size) >= (void *) top_of_heap){
+    if ((void *) ((char *)current_record + (2*sizeof(heap_record) + current_record->section_size + round_size) ) >= (void *) top_of_heap){
         // We have reached the end of the heap, so we must extend it.
-        if (brk((char *) top_of_heap + extra_bytes) == -1){
-            // Hqandle the error, but i dont really know what we'd do here.
+        if ((top_of_heap = sbrk(round_size + sizeof(current_record) + extra_bytes)) == (void *)-1){
+            // Handle the error, but i dont really know what we'd do here.
             return NULL; 
         }
     }
