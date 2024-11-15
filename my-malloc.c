@@ -37,14 +37,15 @@ void *malloc(size_t req_size) {
             if (round_size <= current_record->section_size) {
                 if ((char *)current_record->next_record - ((char *)current_record + round_size) >= 32){
                     //readjust or create/insert new block
-                    heap_record *new_record = (void *)((char *) current_record + sizeof(heap_record) + round_size);
+                    current_record->section_size = round_size;
+                    heap_record *new_record = (void *)((char *) current_record + sizeof(heap_record) + current_record->section_size);
                     new_record->next_record = current_record->next_record;
                     new_record->section_size = (char *)new_record->next_record - (char *)new_record + sizeof(heap_record); 
-                    new_record->free = 1;
+                    new_record->free = 0; // <-------------------------- !!!! if you set the field value to 1 (freed) it causes a segfault
                     current_record->next_record = new_record;
-                    current_record->section_size = round_size;
                 }
                 current_record->free = 0;
+                //cast to char pointer for intuitive arithmatic
                 return (char *) current_record + sizeof(heap_record);
             }
         }
@@ -96,20 +97,20 @@ void *realloc(void *ptr, size_t size) {
         //optimize here
         if(record_to_reallocate->next_record != record_to_reallocate) {
             if((char *)record_to_reallocate->next_record - ((char *) record_to_reallocate + round_size) >= 32) {
-                heap_record *new_record = (void *)((char *) record_to_reallocate + sizeof(heap_record) + round_size);
+                record_to_reallocate->section_size = round_size;
+                heap_record *new_record = (void *)((char *) record_to_reallocate + sizeof(heap_record) + record_to_reallocate->section_size);
                 new_record->next_record = record_to_reallocate->next_record;
                 new_record->section_size = (char *)new_record->next_record - (char *)new_record + sizeof(heap_record); 
                 new_record->free = 1;
                 record_to_reallocate->next_record = new_record;
-                record_to_reallocate->section_size = round_size;
             }
         }else{
-            //it is the last memory block in the linked-list so readjust the size
+            //it is the last memory chunk in the linked-list so readjust the size
             record_to_reallocate->section_size = round_size;
         }
         return ptr;
     }
-    // malloc's optimization should take care of finding freed chunk with matching space, readjusting sizes, and inserting new blocks
+    // malloc's optimization should take care of readjusting sizes and inserting new blocks
     void * new_chunk = malloc(size);
     memcpy(new_chunk,ptr,record_to_reallocate->section_size);
     free(ptr);
