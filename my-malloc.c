@@ -7,7 +7,6 @@
 static void *bottom;
 static int extra_bytes = 10000;
 static void *top_of_heap;
-
 typedef struct my_struct {
     void *next_record;
     unsigned int section_size;
@@ -45,7 +44,6 @@ void *malloc(size_t req_size) {
                     current_record->section_size = round_size;
                 }
                 current_record->free = 0;
-                //cast to char pointer for intuitive arithmatic
                 return (char *) current_record + sizeof(heap_record);
             }
         }
@@ -94,13 +92,27 @@ void *realloc(void *ptr, size_t size) {
     heap_record *record_to_reallocate = (void *)((char *) ptr - sizeof(heap_record));
     size_t round_size = calculate_nearest_size(size);
     if (record_to_reallocate->section_size >= round_size){
+        //optimize here
+        if(record_to_reallocate->next_record != record_to_reallocate) {
+            if((char *)record_to_reallocate->next_record - ((char *) record_to_reallocate + round_size) >= 32) {
+                heap_record *new_record = (void *)((char *) record_to_reallocate + sizeof(heap_record) + round_size);
+                new_record->next_record = record_to_reallocate->next_record;
+                new_record->section_size = (char *)new_record->next_record - (char *)new_record + sizeof(heap_record); 
+                new_record->free = 0;
+                record_to_reallocate->next_record = new_record;
+                record_to_reallocate->section_size = round_size;
+            }
+        }else{
+            //it is the last memory block in the linked-list so readjust the size
+            record_to_reallocate->section_size = round_size;
+        }
         return ptr;
-    }else{
-        void * new_chunk = malloc(size);
-        memcpy(new_chunk,ptr,record_to_reallocate->section_size);
-        free(ptr);
-        return new_chunk;
     }
+    // malloc's optimization should take care of finding freed chunk with matching space, readjusting sizes, and inserting new blocks
+    void * new_chunk = malloc(size);
+    memcpy(new_chunk,ptr,record_to_reallocate->section_size);
+    free(ptr);
+    return new_chunk;
 }
 
 size_t malloc_usable_size(void *ptr){
