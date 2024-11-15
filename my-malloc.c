@@ -40,6 +40,7 @@ void *malloc(size_t req_size) {
                     heap_record *new_record = (void *)((char *) current_record + sizeof(heap_record) + round_size);
                     new_record->next_record = current_record->next_record;
                     new_record->section_size = (char *)new_record->next_record - (char *)new_record + sizeof(heap_record); 
+                    new_record->free = 1;
                     current_record->next_record = new_record;
                     current_record->section_size = round_size;
                 }
@@ -98,7 +99,7 @@ void *realloc(void *ptr, size_t size) {
                 heap_record *new_record = (void *)((char *) record_to_reallocate + sizeof(heap_record) + round_size);
                 new_record->next_record = record_to_reallocate->next_record;
                 new_record->section_size = (char *)new_record->next_record - (char *)new_record + sizeof(heap_record); 
-                new_record->free = 0;
+                new_record->free = 1;
                 record_to_reallocate->next_record = new_record;
                 record_to_reallocate->section_size = round_size;
             }
