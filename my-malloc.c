@@ -57,7 +57,7 @@ void *malloc(size_t req_size) {
         if (round_size <= current_record->size) {
             current_record->size = round_size;
             current_record->free = 0;
-            //cast to char pointer for intuitive arithmatic
+            // Cast to char pointer for intuitive arithmatic
             return (char *) current_record + sizeof(heap_record);
         }
     }
@@ -89,7 +89,7 @@ void *realloc(void *ptr, size_t size) {
     if (size == 0) {
         free(ptr);
     }
-    // check if size is greater than previous allocation chunk
+    // Check if size is greater than previous chunk
     heap_record *record_to_reallocate = (void *)((char *) ptr - sizeof(heap_record));
     size_t round_size = calculate_nearest_size(size);
     if (record_to_reallocate->size >= round_size){
