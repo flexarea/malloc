@@ -93,7 +93,6 @@ void *realloc(void *ptr, size_t size) {
     heap_record *record_to_reallocate = (void *)((char *) ptr - sizeof(heap_record));
     size_t round_size = calculate_nearest_size(size);
     if (record_to_reallocate->size >= round_size){
-        //optimize here
         if (record_to_reallocate->next_record != record_to_reallocate) {
             if ((char *)record_to_reallocate->next_record - ((char *) record_to_reallocate + round_size) >= 32) {
                 record_to_reallocate->size = round_size;
@@ -104,12 +103,12 @@ void *realloc(void *ptr, size_t size) {
                 record_to_reallocate->next_record = new_record;
             }
         } else {
-            //it is the last memory chunk in the linked-list so readjust the size
+            // It is the last memory chunk in the linked-list so readjust the size
             record_to_reallocate->size = round_size;
         }
         return ptr;
     }
-    // malloc's optimization should take care of readjusting sizes and inserting new blocks
+    // Malloc's optimization should take care of readjusting sizes and inserting new blocks
     void * new_chunk = malloc(size);
     memcpy(new_chunk, ptr, record_to_reallocate->size);
     free(ptr);
