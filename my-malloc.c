@@ -7,7 +7,7 @@ static void *heap_bottom;
 static void *top_of_heap;
 #define HEAP_SIZE 1000
 
-typedef struct heap_record_struct {
+typedef struct {
     void *next_record;
     uint32_t size;
     int32_t free;
