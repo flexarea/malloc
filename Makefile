@@ -1,8 +1,9 @@
-my-malloc: my-malloc.c
-	gcc -g -Wall -pedantic -rdynamic -shared -fPIC -o my-malloc.so my-malloc.c
+CFLAGS=-g -Wall -pedantic
+my-malloc.so: my-malloc.c
+	gcc $(CFLAGS) -rdynamic -shared -fPIC -o $@ $^
 
 test: test.c
-	gcc -g -Wall -pedantic -o test test.c
+	gcc $(CFLAGS) -o $@ $^
 
 .PHONY: debug
 debug: my-malloc.so test
