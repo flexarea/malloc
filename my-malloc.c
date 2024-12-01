@@ -2,10 +2,11 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdint.h>
+#include <limits.h>
 
 static void *heap_bottom;
 static void *top_of_heap;
-#define HEAP_SIZE 1000
+#define INITIAL_HEAP_SIZE 1000
 #define MIN_RECORD_SIZE 32
 
 typedef struct {
@@ -23,7 +24,7 @@ size_t calc_alligned_address(size_t size) {
 
 void *malloc(size_t req_size) {
     size_t round_size = calc_alligned_address(req_size);
-    int total_heap_size = round_size + sizeof(heap_record) + HEAP_SIZE
+    int total_heap_size = round_size + sizeof(heap_record) + INITIAL_HEAP_SIZE;
     if (heap_bottom == NULL) {
         if ((heap_bottom = sbrk(total_heap_size)) == (void *) -1) {
             return NULL;
@@ -51,7 +52,7 @@ void *malloc(size_t req_size) {
                 }
                 cur_rec->free = 0;
                 // Cast to char pointer for intuitive arithmatic
-                return (char *) cur_rec + sizeof(heap_record);
+                return (heap_record *) cur_rec + 1;
             }
         }
         cur_rec = cur_rec->next_record;
@@ -63,13 +64,13 @@ void *malloc(size_t req_size) {
             cur_rec->size = round_size;
             cur_rec->free = 0;
             // Cast to char pointer for intuitive arithmatic
-            return (char *) cur_rec + sizeof(heap_record);
+            return (heap_record *) cur_rec + 1;
         }
     }
     // At this point, we have checked all existing records and have not found a free one that's big enough.
     if ((void *) ((char *)cur_rec + (2*sizeof(heap_record) + cur_rec->size + round_size) ) >= (void *) top_of_heap) {
         // We have reached the end of the heap, so we must extend it.
-        if ((top_of_heap = sbrk(round_size + sizeof(heap_record) + HEAP_SIZE)) == (void *)-1) {
+        if ((top_of_heap = sbrk(round_size + sizeof(heap_record) + INITIAL_HEAP_SIZE)) == (void *)-1) {
             return NULL; 
         }
     }
@@ -83,6 +84,10 @@ void *malloc(size_t req_size) {
 
 void *calloc(size_t nmemb, size_t size) {
     void *new_alloc;
+    if (nmemb > INT_MAX || size > INT_MAX) {
+        return NULL;
+    }
+
     if ((new_alloc = malloc(nmemb*size)) == NULL) {
         return NULL;
     }
@@ -102,7 +107,7 @@ void *realloc(void *ptr, size_t size) {
     size_t round_size = calc_alligned_address(size);
     if (record_to_reallocate->size >= round_size){
         if (record_to_reallocate->next_record != record_to_reallocate) {
-            if ((char *)record_to_reallocate->next_record - ((char *) record_to_reallocate + round_size) >= 32) {
+            if ((char *)record_to_reallocate->next_record - ((char *) record_to_reallocate + round_size) >= MIN_RECORD_SIZE) {
                 record_to_reallocate->size = round_size;
                 heap_record *new_record = (void *)((char *) record_to_reallocate + sizeof(heap_record) + record_to_reallocate->size);
                 new_record->next_record = record_to_reallocate->next_record;
@@ -130,7 +135,7 @@ size_t malloc_usable_size(void *ptr){
     if (ptr == NULL) {
         return 0;
     }
-    heap_record *hr = (void*) ((char *) ptr - sizeof(heap_record));
+    heap_record *hr = (heap_record *) ptr - 1;
     return hr->size;
 }
 
