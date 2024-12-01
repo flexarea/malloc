@@ -6,6 +6,7 @@
 static void *heap_bottom;
 static void *top_of_heap;
 #define HEAP_SIZE 1000
+#define MIN_RECORD_SIZE 32
 
 typedef struct {
     void *next_record;
@@ -22,11 +23,12 @@ size_t calc_alligned_address(size_t size) {
 
 void *malloc(size_t req_size) {
     size_t round_size = calc_alligned_address(req_size);
+    int total_heap_size = round_size + sizeof(heap_record) + HEAP_SIZE
     if (heap_bottom == NULL) {
-        if ((heap_bottom = sbrk(round_size + sizeof(heap_record) + HEAP_SIZE)) == (void *) -1) {
+        if ((heap_bottom = sbrk(total_heap_size)) == (void *) -1) {
             return NULL;
         }
-        top_of_heap = (char *)heap_bottom + (round_size + sizeof(heap_record) + HEAP_SIZE);
+        top_of_heap = (char *)heap_bottom + total_heap_size;
         heap_record *head = heap_bottom;
         head->next_record = heap_bottom;
         head->size = round_size;
@@ -39,7 +41,7 @@ void *malloc(size_t req_size) {
         if (cur_rec->free == 1) {
             // Check to see if the freed chunk is the right size
             if (round_size <= cur_rec->size) {
-                if ((char *) cur_rec->next_record - ((char *) cur_rec + round_size) >= 32) {
+                if ((char *) cur_rec->next_record - ((char *) cur_rec + round_size) >= MIN_RECORD_SIZE) {
                     cur_rec->size = round_size;
                     heap_record *new_record = (void *) ((char *) cur_rec + sizeof(heap_record) + cur_rec->size);                    
                     new_record->next_record = cur_rec->next_record;
@@ -67,7 +69,7 @@ void *malloc(size_t req_size) {
     // At this point, we have checked all existing records and have not found a free one that's big enough.
     if ((void *) ((char *)cur_rec + (2*sizeof(heap_record) + cur_rec->size + round_size) ) >= (void *) top_of_heap) {
         // We have reached the end of the heap, so we must extend it.
-        if ((top_of_heap = sbrk(round_size + sizeof(cur_rec) + HEAP_SIZE)) == (void *)-1) {
+        if ((top_of_heap = sbrk(round_size + sizeof(heap_record) + HEAP_SIZE)) == (void *)-1) {
             return NULL; 
         }
     }
@@ -80,11 +82,12 @@ void *malloc(size_t req_size) {
 }
 
 void *calloc(size_t nmemb, size_t size) {
-    void *val;
-    if ((val = malloc(nmemb*size)) == NULL) {
+    void *new_alloc;
+    if ((new_alloc = malloc(nmemb*size)) == NULL) {
         return NULL;
     }
-    return memset(val, 0, calc_alligned_address(nmemb*size));
+    memset(new_alloc, 0, calc_alligned_address(nmemb*size));
+    return new_alloc;
 }
 
 void *realloc(void *ptr, size_t size) {
