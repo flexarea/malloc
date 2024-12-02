@@ -6,7 +6,8 @@
 
 static void *heap_bottom;
 static void *top_of_heap;
-#define INITIAL_HEAP_SIZE 1000
+#define PAGE_SIZE 4096
+#define ADDR_ALIGN 16
 #define MIN_RECORD_SIZE 32
 
 typedef struct {
@@ -15,21 +16,27 @@ typedef struct {
     int32_t free;
 } heap_record;
 
-size_t calc_alligned_address(size_t size) {
-    if (size % 16 == 0) {
-        return size;
+/* 
+closest_multiple returns the closest multiple of mult to value
+In the program, it is used to ensure that all addresses returned are
+16 byte aligned, and to ensure that all calls to sbrk are a multiple
+of the page size (for efficiency). 
+*/
+size_t closest_multiple(size_t value, int mult) {
+    if (value % mult == 0) {
+        return value;
     }
-    return size + (16 - (size % 16));
+    return value + (mult - (value % mult));
 }
 
 void *malloc(size_t req_size) {
-    size_t round_size = calc_alligned_address(req_size);
-    int total_heap_size = round_size + sizeof(heap_record) + INITIAL_HEAP_SIZE;
+    size_t round_size = closest_multiple(req_size, ADDR_ALIGN);
     if (heap_bottom == NULL) {
-        if ((heap_bottom = sbrk(total_heap_size)) == (void *) -1) {
+        size_t initial_heap_size = closest_multiple((round_size + sizeof(heap_record)), PAGE_SIZE);
+        if ((heap_bottom = sbrk(initial_heap_size)) == (void *) -1) {
             return NULL;
         }
-        top_of_heap = (char *)heap_bottom + total_heap_size;
+        top_of_heap = (char *)heap_bottom + initial_heap_size;
         heap_record *head = heap_bottom;
         head->next_record = heap_bottom;
         head->size = round_size;
@@ -70,7 +77,8 @@ void *malloc(size_t req_size) {
     // At this point, we have checked all existing records and have not found a free one that's big enough.
     if ((void *) ((char *)cur_rec + (2*sizeof(heap_record) + cur_rec->size + round_size) ) >= (void *) top_of_heap) {
         // We have reached the end of the heap, so we must extend it.
-        if ((top_of_heap = sbrk(round_size + sizeof(heap_record) + INITIAL_HEAP_SIZE)) == (void *)-1) {
+        size_t heap_increment = closest_multiple((round_size + sizeof(heap_record)), PAGE_SIZE);
+        if ((top_of_heap = sbrk(heap_increment)) == (void *)-1) {
             return NULL; 
         }
     }
@@ -84,14 +92,13 @@ void *malloc(size_t req_size) {
 
 void *calloc(size_t nmemb, size_t size) {
     void *new_alloc;
-    if (nmemb > INT_MAX || size > INT_MAX) {
+    if (size > INT_MAX) {
         return NULL;
     }
-
     if ((new_alloc = malloc(nmemb*size)) == NULL) {
         return NULL;
     }
-    memset(new_alloc, 0, calc_alligned_address(nmemb*size));
+    memset(new_alloc, 0, closest_multiple(nmemb * size, ADDR_ALIGN));
     return new_alloc;
 }
 
@@ -104,7 +111,7 @@ void *realloc(void *ptr, size_t size) {
     }
     // Check if size is greater than previous chunk
     heap_record *record_to_reallocate = (void *)((char *) ptr - sizeof(heap_record));
-    size_t round_size = calc_alligned_address(size);
+    size_t round_size = closest_multiple(size, ADDR_ALIGN);
     if (record_to_reallocate->size >= round_size){
         if (record_to_reallocate->next_record != record_to_reallocate) {
             if ((char *)record_to_reallocate->next_record - ((char *) record_to_reallocate + round_size) >= MIN_RECORD_SIZE) {
