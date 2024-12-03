@@ -92,13 +92,14 @@ void *malloc(size_t req_size) {
 
 void *calloc(size_t nmemb, size_t size) {
     void *new_alloc;
-    if (size > INT_MAX) {
+    size_t product = nmemb * size;
+    if (nmemb != 0 && product / nmemb != size) {
         return NULL;
     }
-    if ((new_alloc = malloc(nmemb*size)) == NULL) {
+    if ((new_alloc = malloc(product)) == NULL) {
         return NULL;
     }
-    memset(new_alloc, 0, closest_multiple(nmemb * size, ADDR_ALIGN));
+    memset(new_alloc, 0, closest_multiple(product, ADDR_ALIGN));
     return new_alloc;
 }
 
